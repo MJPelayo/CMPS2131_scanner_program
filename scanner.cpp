@@ -1,19 +1,19 @@
-#include <cctype>   // For character handling functions (isdigit, isspace)
-#include <iostream> // For I/O operations (cin, cout)
+#include <cctype>   // For character classification functions (isdigit, isspace)
+#include <iostream> // For input/output operations (cin, cout)
 #include <vector>   // For dynamic array storage of tokens
 using namespace std;
 
-// Enum defining the types of tokens the lexer can recognize
+// Enum defining all possible token types
 enum TokenType {
-    DIGIT,         // Single numeric character (0-9)
-    UNKNOWN,       // Sequence of non-digit characters
-    END_OF_INPUT   // Special token indicating end of processing
+    NUMBER,        // One or more consecutive digits (0-9)
+    UNKNOWN,       // Sequence of non-digit, non-whitespace characters
+    END_OF_INPUT   // Signals the end of the input string
 };
 
-// Token structure representing a lexical unit
+// Structure representing a lexical token
 struct Token {
-    TokenType type;  // Classification of the token
-    string value;    // The actual characters the token represents
+    TokenType type;  // Category of the token
+    string value;    // The actual characters it represents
     
     // Constructor for easy token creation
     Token(TokenType typeOfToken, const string& valueOfToken) {
@@ -22,7 +22,7 @@ struct Token {
     }
 };
 
-// Function prototype for the tokenizer
+// Function prototype - gets the next token from input
 Token getNextToken(const string& input, size_t& pos);
 
 int main() {
@@ -31,26 +31,26 @@ int main() {
     getline(cin, input);  // Read entire line including spaces
 
     size_t position = 0;         // Current parsing position in input
-    vector<Token> tokens;        // Storage for all parsed tokens
+    vector<Token> tokens;        // Collection of all parsed tokens
 
-    // Tokenization loop - continues until end of input
+    // Tokenization loop - processes entire input
     while (true) {
         Token token = getNextToken(input, position);
         if (token.type == END_OF_INPUT) {
-            break;  // Exit loop when input is fully processed
+            break;  // Stop when input is fully processed
         }
-        tokens.push_back(token);  // Add valid token to collection
+        tokens.push_back(token);  // Store valid token
     }
 
-    // Display all found tokens
+    // Display all tokens with their types and values
     for (size_t i = 0; i < tokens.size(); i++) {
         const Token& token = tokens[i];
         cout << "Token(Type: ";
         
-        // Print token type in readable format
+        // Print human-readable token type
         switch (token.type) {
-            case DIGIT: 
-                cout << "DIGIT";
+            case NUMBER: 
+                cout << "NUMBER";
                 break;
             case UNKNOWN: 
                 cout << "UNKNOWN";
@@ -64,27 +64,30 @@ int main() {
     return 0;
 }
 
-// Tokenizer function - extracts next token from input starting at pos
+// Tokenizer function - extracts and returns the next token
 Token getNextToken(const string& input, size_t& pos) {
     // Skip any whitespace before the next token
     while (pos < input.length() && isspace(input[pos])) {
         pos++;
     }
 
-    // Check if we've reached end of input after skipping whitespace
+    // Check for end of input after skipping whitespace
     if (pos >= input.length()) {
         return Token(END_OF_INPUT, "");
     }
 
-    // Check for single-digit tokens followed by whitespace or end
-    if (isdigit(input[pos]) &&
-        (pos + 1 >= input.length() || isspace(input[pos + 1]))) {
-        string digit(1, input[pos]);
-        pos++; 
-        return Token(DIGIT, digit);
+    // Handle number tokens (one or more digits)
+    if (isdigit(input[pos])) {
+        string number;
+        // Collect all consecutive digits
+        while (pos < input.length() && isdigit(input[pos])) {
+            number += input[pos];
+            pos++;
+        }
+        return Token(NUMBER, number);
     }
 
-    // Handle unknown tokens (sequences of non-whitespace, non-digit characters)
+    // Handle unknown tokens (non-whitespace, non-digit sequences)
     string unknown = "";
     while (pos < input.length() && !isspace(input[pos])) {
         unknown += input[pos];
