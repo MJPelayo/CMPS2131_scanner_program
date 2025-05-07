@@ -1,61 +1,85 @@
-#include <cctype>   // For isdigit() and isspace() functions
-#include <iostream> // For input/output operations
-#include <vector>   // For storing tokens
+#include <cctype>   // For character classification functions (isdigit, isspace)
+#include <iostream> // For input/output operations (cin, cout)
+#include <vector>   // For dynamic array storage of tokens
 using namespace std;
 
-// Enum defining all possible token types
+/**
+ * TokenType enum defines all possible token categories our lexer recognizes.
+ * Each arithmetic operator now has its own specific type for precise identification.
+ */
 enum TokenType {
-    NUMBER,     // Numeric literals (e.g., 123, -45, +67)
-    OPERATOR,   // Arithmetic operators (+, -, *, /)
-    UNKNOWN,    // Unrecognized character sequences
-    END_OF_INPUT // End of input marker
+    NUMBER,          // Numeric literals (e.g., "123", "-45", "+3.14")
+    ADDITION,        // Specifically for the '+' operator
+    SUBTRACTION,     // Specifically for the '-' operator
+    MULTIPLICATION,  // Specifically for the '*' operator
+    DIVISION,        // Specifically for the '/' operator
+    UNKNOWN,         // Any unrecognized character sequence
+    END_OF_INPUT     // Special marker indicating end of input
 };
 
-// Structure representing a lexical token
+/**
+ * Token structure represents a single lexical unit with:
+ * - type: The classification of the token (from TokenType)
+ * - value: The actual text the token represents
+ */
 struct Token {
-    TokenType type;  // The type/category of the token
-    string value;    // The actual text the token represents
+    TokenType type;
+    string value;
     
-    // Constructor to initialize token properties
+    // Constructor initializes token properties
     Token(TokenType typeOfToken, const string& valueOfToken) 
         : type(typeOfToken), value(valueOfToken) {}
 };
 
-// Function prototype - gets the next token from input
+// Forward declaration of tokenizer function
 Token getNextToken(const string& input, size_t& pos);
 
 int main() {
     string input;
-    cout << "Enter input: ";
-    getline(cin, input);  // Read the entire input line
+    cout << "Enter input: ";  // Prompt user for input
+    getline(cin, input);      // Read entire line including spaces
 
-    size_t position = 0;         // Current position in input string
-    vector<Token> tokens;        // List to store all tokens
+    size_t position = 0;             // Current parsing position in input
+    vector<Token> tokens;            // Collection to store parsed tokens
 
-    // Main tokenization loop
+    // Tokenization loop - processes entire input string
     while (true) {
         Token token = getNextToken(input, position);
+        
+        // Stop when we reach end of input
         if (token.type == END_OF_INPUT) {
-            break;  // Exit when we've processed all input
+            break;
         }
-        tokens.push_back(token);  // Add token to our collection
+        
+        tokens.push_back(token);  // Add valid token to our collection
     }
 
     // Display all tokens with their types and values
     for (const Token& token : tokens) {
         cout << "Token(Type: ";
+        
+        // Print human-readable token type
         switch (token.type) {
             case NUMBER:
                 cout << "NUMBER";
                 break;
-            case OPERATOR:
-                cout << "OPERATOR";
+            case ADDITION:
+                cout << "ADDITION";
+                break;
+            case SUBTRACTION:
+                cout << "SUBTRACTION";
+                break;
+            case MULTIPLICATION:
+                cout << "MULTIPLICATION";
+                break;
+            case DIVISION:
+                cout << "DIVISION";
                 break;
             case UNKNOWN:
                 cout << "UNKNOWN";
                 break;
             default:
-                cout << "OTHER";  // Shouldn't occur normally
+                cout << "OTHER";  // Fallback (shouldn't occur)
         }
         cout << ", Value: \"" << token.value << "\")\n";
     }
@@ -63,31 +87,45 @@ int main() {
     return 0;
 }
 
-/* 
- * Tokenizer function - extracts and returns the next token from input
- * starting at position pos (which it updates)
+/**
+ * getNextToken - The core tokenizer function that:
+ * 1. Skips whitespace
+ * 2. Identifies the next token at current position
+ * 3. Advances the position
+ * 4. Returns the token
  */
 Token getNextToken(const string& input, size_t& pos) {
-    // Skip any whitespace characters
+    // Phase 1: Skip all whitespace characters
     while (pos < input.length() && isspace(input[pos])) {
         pos++;
     }
 
-    // Check if we've reached end of input
+    // Check if we've reached end of input after skipping whitespace
     if (pos >= input.length()) {
         return Token(END_OF_INPUT, "");
     }
 
-    // First check for operators (+, -, *, /)
-    if (input[pos] == '+' || input[pos] == '-' || 
-        input[pos] == '*' || input[pos] == '/') {
-        char op = input[pos];
-        pos++;
-        return Token(OPERATOR, string(1, op));
+    // Phase 2: Check for operators (done first to distinguish from number signs)
+    switch (input[pos]) {
+        case '+':
+            pos++;
+            return Token(ADDITION, "+");
+        case '-':
+            pos++;
+            return Token(SUBTRACTION, "-");
+        case '*':
+            pos++;
+            return Token(MULTIPLICATION, "*");
+        case '/':
+            pos++;
+            return Token(DIVISION, "/");
     }
 
-    // Check for numbers (with optional sign)
-    // Either starts with digit, or sign followed by digit
+    // Phase 3: Handle numeric literals (with optional sign)
+    // Valid cases:
+    // 1. Starts with digit (positive number)
+    // 2. Starts with '+' followed by digit
+    // 3. Starts with '-' followed by digit (negative number)
     if (isdigit(input[pos]) || 
         ((input[pos] == '+' || input[pos] == '-') && 
          pos + 1 < input.length() && isdigit(input[pos+1]))) {
@@ -107,7 +145,7 @@ Token getNextToken(const string& input, size_t& pos) {
         return Token(NUMBER, number);
     }
 
-    // Handle unknown tokens (anything not whitespace, operator, or number)
+    // Phase 4: Handle unknown tokens (anything not matched above)
     string unknown;
     while (pos < input.length() && !isspace(input[pos]) &&
            input[pos] != '+' && input[pos] != '-' &&
