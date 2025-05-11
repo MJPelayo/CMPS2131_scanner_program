@@ -1,5 +1,8 @@
 # CMPS2131_scanner_program
 
+YouTube video where  explain and demo of the Scanner.
+https://youtu.be/HUVWimro1sM
+
 # Arithmetic Expression Tokenizer
 
 A lexical analyzer that breaks down arithmetic expressions into their component tokens.
